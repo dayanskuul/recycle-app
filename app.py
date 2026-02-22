@@ -95,6 +95,10 @@ html, body, [class*="css"] {
 [data-testid="stFileUploader"] span {
     color: #4A4A42 !important;
 }
+# filename color            
+[data-testid="stFileUploaderFile"] {
+    color: #4A4A42 !important;
+}
 
 /* ── Result Card ── */
 .result-card {
