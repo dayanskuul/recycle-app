@@ -77,29 +77,6 @@ html, body, [class*="css"] {
     transition: border-color 0.2s;
 }
 
-[data-testid="stFileUploader"]:hover {
-    border-color: #1C1C1C;
-}
-
-/* Fix invisible text inside upload box */
-[data-testid="stFileUploaderDropzone"],
-[data-testid="stFileUploaderDropzone"] p,
-[data-testid="stFileUploaderDropzone"] span,
-[data-testid="stFileUploaderDropzone"] div,
-[data-testid="stFileUploaderDropzone"] small {
-    background: transparent !important;
-    color: #4A4A42 !important;
-}
-
-[data-testid="stFileUploader"] label,
-[data-testid="stFileUploader"] span {
-    color: #4A4A42 !important;
-}
-         
-[data-testid="stFileUploaderFile"] {
-    color: #4A4A42 !important;
-}
-
 /* ── Result Card ── */
 .result-card {
     background: #FFFFFF;
@@ -112,7 +89,6 @@ html, body, [class*="css"] {
 
 .prediction-chip {
     display: inline-block;
-    background: #1C1C1C;
     color: #FFFFFF;
     font-family: 'DM Mono', monospace;
     font-size: 0.95rem;
@@ -132,6 +108,13 @@ html, body, [class*="css"] {
     margin-bottom: 0.3rem;
 }
 
+.material-text {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #1C1C1C;
+}
+
 .confidence-value {
     font-family: 'DM Mono', monospace;
     font-size: 2rem;
@@ -146,16 +129,6 @@ html, body, [class*="css"] {
     border-radius: 14px;
     padding: 1.25rem 1.75rem;
     border: 1px solid #E8E7E0;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.04);
-}
-
-.prob-section-title {
-    font-size: 0.72rem;
-    font-weight: 500;
-    text-transform: uppercase;
-    letter-spacing: 0.09em;
-    color: #9A9A92;
-    margin-bottom: 1rem;
 }
 
 .prob-row {
@@ -165,57 +138,12 @@ html, body, [class*="css"] {
     margin-bottom: 8px;
 }
 
-.prob-name {
-    font-family: 'DM Mono', monospace;
-    font-size: 0.78rem;
-    color: #4A4A42;
-    width: 78px;
-    flex-shrink: 0;
-}
+.prob-name { font-family: 'DM Mono', monospace; font-size: 0.78rem; color: #4A4A42; width: 78px; }
+.prob-track { flex: 1; height: 6px; background: #EDECE8; border-radius: 100px; overflow: hidden; }
+.prob-fill-active { height: 6px; border-radius: 100px; background: #1C1C1C; }
+.prob-fill-inactive { height: 6px; border-radius: 100px; background: #C8C7C0; }
+.prob-pct { font-family: 'DM Mono', monospace; font-size: 0.78rem; color: #7A7A72; width: 38px; text-align: right; }
 
-.prob-name-bold {
-    font-family: 'DM Mono', monospace;
-    font-size: 0.78rem;
-    font-weight: 600;
-    color: #1C1C1C;
-    width: 78px;
-    flex-shrink: 0;
-}
-
-.prob-track {
-    flex: 1;
-    height: 6px;
-    background: #EDECE8;
-    border-radius: 100px;
-    overflow: hidden;
-}
-
-.prob-fill-active {
-    height: 6px;
-    border-radius: 100px;
-    background: #1C1C1C;
-}
-
-.prob-fill-inactive {
-    height: 6px;
-    border-radius: 100px;
-    background: #C8C7C0;
-}
-
-.prob-pct {
-    font-family: 'DM Mono', monospace;
-    font-size: 0.78rem;
-    color: #7A7A72;
-    width: 38px;
-    text-align: right;
-    flex-shrink: 0;
-}
-
-/* ── Image ── */
-[data-testid="stImage"] img {
-    border-radius: 12px;
-    border: 1px solid #E8E7E0;
-}
 </style>
 """, unsafe_allow_html=True)
 
@@ -253,11 +181,10 @@ uploaded_file = st.file_uploader(
 
 if uploaded_file is not None:
     image = Image.open(uploaded_file).convert('RGB')
-
     col1, col2 = st.columns([1, 1], gap="large")
 
     with col1:
-        st.image(image, caption="", use_container_width=True)
+        st.image(image, use_container_width=True)
 
     with col2:
         # ── Inference ──
@@ -271,42 +198,41 @@ if uploaded_file is not None:
 
         predicted_index = int(np.argmax(output_data))
         confidence = float(output_data[predicted_index])
-        predicted_label = CLASS_NAMES[predicted_index]
+        actual_material = CLASS_NAMES[predicted_index]
+
+        # ── Logical Grouping ──
+        if actual_material == 'Trash':
+            display_label = "Non-Recyclable"
+            chip_color = "#D32F2F" # Red
+        else:
+            display_label = "Recyclable"
+            chip_color = "#2E7D32" # Green
 
         # ── Top result card ──
         st.markdown(f"""
         <div class="result-card">
+            <div class="meta-label">Disposal Status</div>
+            <span class="prediction-chip" style="background-color: {chip_color};">{display_label}</span>
             <div class="meta-label">Detected Material</div>
-            <span class="prediction-chip">{predicted_label}</span>
+            <div class="material-text">{actual_material}</div>
             <div class="meta-label">Confidence</div>
             <div class="confidence-value">{confidence:.1%}</div>
         </div>
         """, unsafe_allow_html=True)
 
         # ── Probability breakdown ──
-        # Build rows as a plain string first, then inject once — avoids f-string/HTML conflicts
         rows_html = ""
         for i, prob in enumerate(output_data):
             p = float(prob)
             is_top = (i == predicted_index)
-            name_class = "prob-name-bold" if is_top else "prob-name"
             fill_class = "prob-fill-active" if is_top else "prob-fill-inactive"
-            pct_str = f"{p:.0%}"
             width_str = f"{p * 100:.1f}%"
             rows_html += (
-                '<div class="prob-row">'
-                f'<span class="{name_class}">{CLASS_NAMES[i]}</span>'
-                '<div class="prob-track">'
-                f'<div class="{fill_class}" style="width:{width_str}"></div>'
-                '</div>'
-                f'<span class="prob-pct">{pct_str}</span>'
-                '</div>'
+                f'<div class="prob-row">'
+                f'<span class="prob-name">{"<b>" if is_top else ""}{CLASS_NAMES[i]}{"</b>" if is_top else ""}</span>'
+                f'<div class="prob-track"><div class="{fill_class}" style="width:{width_str}"></div></div>'
+                f'<span class="prob-pct">{p:.0%}</span>'
+                f'</div>'
             )
 
-        st.markdown(
-            '<div class="prob-card">'
-            '<div class="prob-section-title">Probability Breakdown</div>'
-            + rows_html +
-            '</div>',
-            unsafe_allow_html=True
-        )
+        st.markdown(f'<div class="prob-card"><div class="prob-section-title">Class Probabilities</div>{rows_html}</div>', unsafe_allow_html=True)
