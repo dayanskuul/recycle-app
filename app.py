@@ -68,14 +68,30 @@ html, body, [class*="css"] {
     margin: 1.5rem 0 2rem 0;
 }
 
-/* ── Upload Zone ── */
+/* ── Upload Zone Fix ── */
 [data-testid="stFileUploader"] {
     background: #FFFFFF;
     border: 1.5px dashed #C8C7C0;
     border-radius: 14px;
     padding: 1.25rem;
-    transition: border-color 0.2s;
 }
+
+/* Forces the file name and 'X' button to be dark and visible */
+[data-testid="stFileUploader"] section, 
+[data-testid="stFileUploader"] section div, 
+[data-testid="stFileUploader"] section p, 
+[data-testid="stFileUploader"] section span,
+[data-testid="stFileUploader"] small,
+[data-testid="stFileUploader"] button {
+    color: #1C1C1C !important;
+}
+
+/* Fixes the 'X' icon color specifically */
+[data-testid="stFileUploader"] svg {
+    fill: #1C1C1C !important;
+    color: #1C1C1C !important;
+}
+
 
 /* ── Result Card ── */
 .result-card {
